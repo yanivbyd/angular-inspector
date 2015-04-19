@@ -6,6 +6,7 @@
 .project
 .metadata
 chrome-win32/
+node_modules/chromium-for-angular-inspector/
 bin/
 tmp/
 *.tmp
