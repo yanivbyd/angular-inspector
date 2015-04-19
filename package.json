@@ -1,12 +1,12 @@
 {
   "name": "angular-inspector",
-  "version": "0.1.1",
+  "version": "0.3.1",
   "config": { 
   	"port" : "8095" 
   },
   "scripts": { 
   	"postinstall" : "npm install chromium-for-angular-inspector && node_modules\\chromium-for-angular-inspector\\chrome-win32.exe",
-  	"start" : "chrome-win32\\chrome.exe --disable-web-security --app=file:///C:/angular-inspector/ng-studio.html?project=example.prj --allow-file-access"
+  	"start" : "start.bat"
   },
  "dependencies": {
   }  
