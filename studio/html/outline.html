@@ -1,0 +1,8 @@
+<section class="studio-ng-templates">
+	<input ng-model="search" placeholder="search template" jb-selection-search />
+	<ul>
+		<li ng-repeat="template in templates | filter:search" ng-click="openTemplate()" jb-selection>
+			<div>{{template}}</div>
+		</li>
+	</ul>
+</section>

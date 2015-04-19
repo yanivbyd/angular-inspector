@@ -1,0 +1,71 @@
+/* section: .jb-label */
+.jb-label { font-size: 14px; }
+
+/* section: .jb-propertySheet */
+.jb-propertySheet {}
+.jb-propertySheet>.property {
+  margin-bottom:20px;
+}
+.jb-propertySheet>.property:last-child {
+  margin-bottom:0px;
+}
+.jb-propertySheet>.property>.property-title {
+  width:100px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  vertical-align:top;
+  margin-top:2px;
+  font-size:14px;
+}
+.jb-propertySheet>.property>div {
+  display:inline-block;
+}
+
+/* editableText: jb-textbox */
+.jb-textbox { padding: 3px; }
+
+/* section: .jb-itemlist */
+.jb-itemlist { list-style: none; padding: 0; margin: 0;}
+.jb-itemlist>li { list-style: none; padding: 0; margin: 0;}
+.jb-itemlist>li.selected { background: #337AB7; color: #fff ;}
+
+/* section: .jb-btn-default */
+.jb-btn-default { margin-top: 5px; margin-bottom: 5px; color: #fff; background-color: #337ab7; border-color: #2e6da4;
+padding: 6px 12px;
+font-size: 14px;
+font-weight: 400;
+line-height: 1.42857143;
+text-align: center;
+white-space: nowrap;
+vertical-align: middle;
+touch-action: manipulation;
+cursor: pointer;
+-webkit-user-select: none;
+border: 1px solid transparent;
+border-radius: 4px;
+box-sizing: border-box;
+ display: block;}
+
+.jb-btn-default:active, .jb-btn-default:hover { color: #fff; background-color: #286090; border-color: #204d74; }
+.jb-btn-default:focus, .jb-btn-default:active {}
+
+/* group: horizontal-group */
+.jb-horizontal-group { display:table; }
+.jb-horizontal-group>* { display:table-cell; }
+
+/* searchMark: jb-default-search-mark */
+.jb-default-search-mark { color:blue; font-weight: bold; }
+
+/* dialog: jb-default-dialog */
+.jb-default-dialog { position: absolute; top: 40px; left: 40px; background: #F9F9F9; border: 1px solid #BEBEBE; box-shadow: 0 0px 9px #ccc; min-width: 300px; min-height: 50px; overflow: auto;}
+.jb-default-dialog>.dialog-title { cursor: move; text-align: left; background: #fff url('../img/favicon.png') no-repeat 5px 10px; font-size 13px; font-weight: bold;
+padding: 10px 10px 10px 27px; color: #6D6E71; min-height: 12px; border-bottom: 1px solid #BEBEBE; text-transform: capitalize;}
+.jb-default-dialog>.dialog-content { min-width1: 300px; min-height1: 50px; overflow1: auto; padding: 10px; }
+.jb-default-dialog>.dialog-close { position: absolute; cursor: pointer; right: 4px; top: 4px; font: 21px sans-serif; border: none; background: transparent; color: #000; text-shadow: 0 1px 0 #fff; font-weight: 700; opacity: .2;}
+.jb-default-dialog>.dialog-close:hover { opacity: .5; }
+ 
+ /* .jb-accordion */
+ .jb-accordion>.panel.collapsed>.panel-collapse { display: none; }
+
+ /* .jb-expandableSection */
+ .jb-expandableSection.panel.collapsed>.panel-collapse { display: none; }
