@@ -1,0 +1,31 @@
+<section class="studio-properties-in-dialog">
+	<div class="studio-propertySheet">
+		<div class="property innerText" ng-show="innerText">
+			<label class="property-title">text:</label>
+			<input class="property-content jb-studio-primitive-textbox" ng-model="innerText" ng-keydown="propertyKeyDown($event,true)"/>
+		</div>
+		<div class="property" ng-repeat="attr in attributes">
+			<label class="property-title">{{attr.name}}:</label>
+			<input class="propertty-content jb-studio-primitive-textbox" ng-model="attr.value" ng-keydown="propertyKeyDown($event)"/>
+			<button class="delete" ng-click="deleteDirective(attr.name)">&#10006;</button>
+		</div>
+	</div>
+	<select id="newDirective" ng-model="newDirective" ng-change="addDirective(newDirective)">
+		<option selected>+</option>
+		<option ng-repeat="dir in directives">{{dir}}</option>
+	</select>
+</section>
+
+<div class="studio-auto-complete-popup" style="top:{{top}};left:{{left}}" ng-show="autoCompleteOn">
+	<table>
+		<tr class="item" ng-repeat="(name,value) in scope" ng-click="itemClick(name)">
+			<td class="name"><span>{{name}}</span></td>
+			<td class="value" ng-attr-title="{{value}}"><span>{{value}}</span></td>
+		</tr>
+	</table>
+</div>
+
+<select class="insert-in-toolbar" ng-model="newTag" ng-change="insert(newTag)">
+	<option>Insert ...</option>
+	<option ng-repeat="tag in htmlTags">{{tag}}</option>
+</select>

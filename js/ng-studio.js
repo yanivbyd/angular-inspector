@@ -7460,6 +7460,7 @@ jb_component('studio.componentHasParams',{
   }
 });
 
+jbart.studio = jbart.studio || {};
 jbart.studio.directives = ["ng-app", "ng-bind", "ng-bind-html", "ng-bind-template", "ng-blur", "ng-change", "ng-checked", "ng-class", "ng-class-even", "ng-class-odd", "ng-click", "ng-cloak", "ng-controller", "ng-copy", "ng-csp", "ng-cut", "ng-dblclick", "ng-disabled", "ng-focus", "ng-form", "ng-hide", "ng-href", "ng-if", "ng-include", "ng-init", "ng-jq", "ng-keydown", "ng-keypress", "ng-keyup", "ng-list", "ng-model", "ng-model-options", "ng-mousedown", "ng-mouseenter", "ng-mouseleave", "ng-mousemove", "ng-mouseover", "ng-mouseup", "ng-non-bindable", "ng-open", "ng-options", "ng-paste", "ng-pluralize", "ng-readonly", "ng-repeat", "ng-selected", "ng-show", "ng-src", "ng-srcset", "ng-style", "ng-submit", "ng-switch", "ng-transclude", "ng-value"];
 
 jb_component("studio.angularAll", {
@@ -7924,6 +7925,8 @@ function jb_studioCrossdomainUrl(url,cookie) {
 		if (cookie)
 			url += '&header_cookie='+encodeURIComponent(cookie);
 	}
+	if (url.indexOf('//')==0) url = 'http:'+url;
+	
 	return url;
 }
 
@@ -8190,4 +8193,310 @@ function jb_ngStudioFindElemsOfTemplate(tElem) {
 
 function jb_ngGetTemplateRoots(tElem) {
 	return $(tElem).parents().last().children().get();
+}
+
+// generic tree
+
+jb_component('tree',{
+	type: 'control',
+	params: {
+		nodes: { type: 'treeNodes', dynamic: true },
+		itemText: { dynamic: true, defaultValue: '{{.}}'},
+		itemVariable: { as: 'string' },
+		style: { 
+			type: "tree.style", 
+			defaultValue: {	$: "tree.ul-li" }
+		},
+		features: { type: "treeFeature[]", dynamic: true }
+	},
+	impl: function(context,nodes,itemText,itemVariable,style,features,childrenEquality) {
+		return jb_control(context,{
+			nodes: nodes(),
+			itemVariable: itemVariable,
+			itemText: function(item) { return itemText(jb_treeItemContext(this,item)); }
+		});
+	}
+});
+
+function jb_treeItemContext(tree,item,nodeEl) {
+	var vars = jb_obj(tree.itemVariable,item);
+	if (nodeEl) vars.node = nodeEl.jbNode;
+	vars.treeControl = tree;
+
+	return jb_ctx(tree.context,{ data: item, vars: vars } );
+}
+
+jb_component('treeDoubleClickNode',{
+	type: 'treeFeature',
+	params: {
+		action: { type: 'action', dynamic: true }
+	},
+	impl: function(context,action) {
+		jb_bind(context.vars.control,'treenode',function($item) {
+			$item.dblclick(function(event) {
+				action(jb_treeItemContext(context.vars.control,$item[0].jbItem,$item[0]));
+				event.stopPropagation();
+			});
+
+			jb_bind(context.vars.control,'enter',function($item) {
+				action(jb_treeItemContext(context.vars.control,$item[0].jbItem,$item[0]));
+				event.stopPropagation();
+			});
+		});
+	}
+});
+
+jb_component('deleteNode',{
+	type: 'treeFeature',
+	params: {
+		action: { type: 'action', dynamic: true }
+	},
+	impl: function(context,action) {
+		jb_bind(context.vars.control,'delete',function($item) {
+			action(jb_treeItemContext(context.vars.control,$item[0].jbItem,$item[0]));
+		});
+	}
+});
+jb_component('rightClickToAddItems', {
+	type: 'treeFeature',
+	params: {
+		action: { type: 'action', dynamic: true }
+	},
+	impl: function(context,action) {
+		jb_bind(context.vars.control,'rightClickToAddItems',function($item) {
+				action(jb_treeItemContext(context.vars.control,$item[0].jbItem,$item[0]));
+		});
+	}
+});
+
+
+jb_component('autoSelectFirstItem', {
+	type: 'treeFeature',
+	impl: function(context) {
+		var tree = context.vars.control;
+		jb_bind(tree,'render',function() {
+			tree.$el.find('>.treenode').first().addClass('selected');
+		});
+	}
+});
+
+jb_component('autoFocus', {
+	type: 'treeFeature',
+	impl: function(context) {
+		var tree = context.vars.control;
+		jb_bind(tree,'render',function() {
+			tree.$el.focus();
+		})
+	}
+});
+
+
+jb_component('treeSelection',{
+	type: 'treeFeature',
+	params: {
+		onSelection: { type: 'action', dynamic: true }
+	},
+	impl: function(context,onSelection) {
+		var control = context.vars.control;
+		jb_bind(control,'selectionChanged',function($item) {
+			onSelection(jb_treeItemContext(context.vars.control,$item[0].jbItem,$item[0]));
+		});
+
+		jb_bind(control,'treenodeClicked',function($item) {
+			control.$('.treenode').removeClass('selected');
+			$item.addClass('selected');
+    		jb_trigger(control,'selectionChanged',$item);
+		});
+
+		jb_bind(control,'render',function() {
+			control.$el.click(function() { control.$el.focus();	});
+		    control.$el.keydown(function(event) {
+		      if (event.keyCode == 40) { down(); event.stopPropagation(); }
+		      if (event.keyCode == 38) { up(); event.stopPropagation(); }
+		      if (event.keyCode == 37) { left(); event.stopPropagation(); }
+		      if (event.keyCode == 39) { right(); event.stopPropagation(); }
+		      if (event.keyCode == 13) { jb_trigger(control,'enter',control.$('.selected')); jb_digest(); }
+		      if (event.keyCode == 46) { jb_trigger(control,'delete',control.$('.selected')); jb_digest(); }
+		    });
+		    if (control.$el[0].tabIndex == -1) control.$el[0].tabIndex = 0;
+			control.$el.focus();
+		});
+
+		jb_bind(control,'beforeNodeDeleted',function(node) {
+			if (!node.$el.hasClass('selected')) return;
+			if (node.$el.next().length) selectNode(node.$el.next());
+		});
+
+		jb_bind(control,'nodeChildrenRefreshed',function(args) {
+			var selected = args.$prevnodes.filter('.selected')[0];
+			if (!selected) return;
+			// find selected in new nodes
+			var new_selected = args.$nodes.get().filter(function(node) { 
+				return node.jbNode.value == selected.jbNode.value;
+			 })[0];
+			new_selected = new_selected || args.$nodes[args.$prevnodes.get().indexOf(selected)];
+			selectNode(new_selected);
+		});
+
+		function down() {
+			var $selected = control.$('.selected');
+			if (!$selected[0]) return;
+			var next = (!$selected.hasClass('collapsed') && $selected.find('.treenode')[0]);
+			if (!next) {
+		      for(var iter=$selected[0];iter && !next;) {
+		        next = iter.nextSibling;
+		        if (!next) iter=parentNode(iter)[0];
+		      }      
+		    }
+	    	selectNode(next);
+	    }
+
+	    function parentNode(node) { 
+	    	return $(node).parent().closest('.treenode');
+	    }
+	    function up() {
+	    	var $selected = control.$('.selected');
+	    	if (!$selected[0]) return;
+	    	var prev = $selected.prev()[0] ? lastVisibleChildOf($selected.prev()) : parentNode($selected);
+	    	if (prev[0])
+	    		selectNode(prev);
+	    }
+
+		  function left() {
+	    	control.$('.selected').addClass('collapsed');
+		  }
+
+		  function right() {
+	    	var selected = control.$('.selected')[0];
+	    	if (!selected) return;
+	    	if ($(selected).hasClass('collapsed') && ! $(selected).hasClass('leaf'))
+	    		selected.jbExpand();
+	    	else
+	    		jb_trigger(control,'rightClickToAddItems',$(selected));
+		  }
+
+		  function lastVisibleChildOf($parent) {
+		  	if ($parent.hasClass('collapsed') || $parent.hasClass('leaf')) return $parent;
+		  	var lastChild = $parent.find('>.treenode-children>.treenode').last();
+		  	return lastVisibleChildOf(lastChild);
+		  }
+
+		  function selectNode(newSelected) {
+	    	if (!newSelected) return;
+	  		control.$('.selected').removeClass('selected');
+	  		$(newSelected).addClass('selected');
+	  		jb_trigger(control,'selectionChanged',$(newSelected));
+	  	  }
+
+	}
+});
+
+jb_type('tree.type');
+
+jb_component('tree.ul-li',{
+	type: 'tree.style',
+	impl: function() {
+		return {
+			html: '<ul class="tree-parent"><li class="treenode"><div class="treenode-line"><button class="treenode-expandbox"><div class="frame"/><div class="line-lr"/><div class="line-tb"/></button><span class="treenode-icon" /><div class="treenode-label"/></div><ul class="treenode-children"/></li></ul>',
+			cssClass: "jb-tree",
+			create: function(control) {
+				jb_tree(control);
+			}
+		}
+	}
+});
+
+function jb_tree(control) {
+	var $nodeTemplate = control.$('.treenode').remove();
+
+	control.createNode = function($nodeEl,node,level) {
+		$nodeEl[0].jbItem = node.value; $nodeEl[0].jbNode = node; node.$el = $nodeEl;
+		var children = node.children && node.children() || [];
+		var $label = $nodeEl.find('.treenode-label').text(control.itemText(node.value)).click(function(e) {
+			jb_trigger(control,'treenodeClicked',$nodeEl);	
+		});
+		jb_watch(function() { 
+			return control.itemText(node.value); 
+		},$nodeEl,function(newval) {
+			$label.text(newval);
+		});
+
+		$nodeEl.find('.treenode-expandbox').click(function() {
+			if (!$nodeEl.hasClass('leaf')) {
+				if ($nodeEl.hasClass('collapsed'))
+					$nodeEl[0].jbExpand();
+				else
+					$nodeEl.addClass('collapsed');
+			}
+		});
+		$nodeEl[0].jbExpand = function() {
+			if ($nodeEl.hasClass('collapsed')) {
+				$nodeEl.removeClass('collapsed');
+				if (!$nodeEl[0].jbChildrenCreated) {
+					control.createNodeChildren($nodeEl,children,level);
+					$nodeEl[0].jbChildrenCreated = true;
+				}
+			}
+		}
+		// watch node parent before its children
+		jb_watch(function() { return node.children && node.children(true) || []}, $nodeEl,refreshChildren, jb_treeNodeChildrenEquality);
+
+		if (level < 2)
+			control.createNodeChildren($nodeEl,children,level);
+		else {
+			$nodeEl.addClass('collapsed');
+			if (children.length==0) $nodeEl.addClass('leaf');
+		}
+
+		jb_trigger(control,'treenode',$nodeEl);
+
+		function refreshChildren(newChildren,prevChildren) {
+			var deletedNodeIndex = findDeletedNodeIndex(newChildren,prevChildren);
+			if (deletedNodeIndex > -1) {
+				var $nodeToDel = $nodeEl.find('>.treenode-children>.treenode').slice(deletedNodeIndex,deletedNodeIndex+1);
+				if ($nodeToDel[0]) {
+					jb_trigger(control,'beforeNodeDeleted',$nodeToDel[0].jbNode);
+					$nodeToDel.remove();
+					jb_trigger(control,'nodeDeleted',$nodeToDel[0].jbNode);
+					return;
+				}
+			}
+			newChildren = node.children && node.children() || [];
+			var $prevnodes = $nodeEl.find('.treenode-children').first().children().remove();
+			control.createNodeChildren($nodeEl,newChildren,level);
+			jb_trigger(control,'nodeChildrenRefreshed',{ node: node, newChildren: newChildren, prevChildren: prevChildren, $prevnodes: $prevnodes, $nodes: $nodeEl.find('.treenode-children').children() });
+		}
+
+		function findDeletedNodeIndex(newChildren,prevChildren) {
+			if (newChildren.length != prevChildren.length-1) return -1;
+			var out=-1;
+			for(var i=0;i<prevChildren.length-1;i++) {
+				var i2 = (out==-1) ? i : i-1;
+				if (prevChildren[i].value != newChildren[i2].value) {
+					if (out>-1) return -1;	// more than one differance
+					out = i;
+				}
+			}
+			if (out == -1) return prevChildren.length-1;	// the last one
+			return out;
+		}
+	}
+
+	control.createNodeChildren = function($nodeEl,children,level) {
+		var $parent = $( $nodeEl.find('.treenode-children')[0] || $nodeEl[0] );
+		children.forEach(function(childNode) {
+			var $childNode = $nodeTemplate.clone().appendTo($parent);
+			control.createNode($childNode,childNode,level+1);
+		});
+		$nodeEl.toggleClass('leaf',children.length == 0);
+	}
+	control.createNodeChildren(control.$('.tree-parent'),control.nodes,0);
+}
+
+function jb_treeNodeChildrenEquality(arr1,arr2) {
+	if (arr1.length != arr2.length) return false;
+	for(var i=0;i<arr1.length;i++)
+		if (arr1[i].value != arr2[i].value) 
+		  return false;
+	return true;	
 }
