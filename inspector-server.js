@@ -216,14 +216,15 @@ function doHttpCall(options) {
   };
   if (urlObj.port) http_options.port = urlObj.port;
 
-  // if (GLOBAL.fiddler) {
-  //   var port = http_options.port ? ':' + http_options.port : '';
-  //   http_options.path = (urlObj.protocol == 'https:' ? 'https' : 'http') + '://' + http_options.host + port + http_options.path;
-  //   http_options.headers.host = http_options.host;
-  //   http_options.host = '127.0.0.1';
-  //   http_options.port = 8888;
-  //   console.log(JSON.stringify(http_options, null, '\t'));
-  // }
+  GLOBAL.fiddler = true;
+  if (GLOBAL.fiddler) {
+    var port = http_options.port ? ':' + http_options.port : '';
+    http_options.path = (urlObj.protocol == 'https:' ? 'https' : 'http') + '://' + http_options.host + port + http_options.path;
+    http_options.headers.host = http_options.host;
+    http_options.host = '127.0.0.1';
+    http_options.port = 8888;
+//    console.log(JSON.stringify(http_options, null, '\t'));
+  }
 
   // MAY BE BUGGY - do not copy referer and X-Requested-With:XMLHttpRequest from client
   delete(http_options.headers.referer);

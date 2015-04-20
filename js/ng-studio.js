@@ -7865,9 +7865,10 @@ jb_component('studio.angularPreviewIframe',{
 			htmlContent = htmlContent.replace(/window\.location =/g,'debugger; window.location1 =');
 			htmlContent = htmlContent.replace(/<head>/,'<head>'+baseStr);
 
-			var pushState = '<script>try { history.pushState({},"","'+projectInfo.previewUrl+'"); } catch(e) {}</script>';
+			var setDocCookie = (projectInfo.cookie || '').split(';').map(function(c) { return 'document.cookie="' + c.trim() +'";' }).join('');
+			var scriptToRunInitially = '<script>try { ' + setDocCookie + 'debugger; history.pushState({},"","'+projectInfo.previewUrl+'");\n ' + setDocCookie + '} catch(e) {}</script>';
 
-			htmlContent = htmlContent.replace(/<head>/,'<head>'+pushState);
+			htmlContent = htmlContent.replace(/<head>/,'<head>'+scriptToRunInitially);
 
 			if (! htmlContent.match(/script src="([^"]*angular.js)"/)) {
 				var doc = iframe[0].contentWindow.document;
@@ -7922,20 +7923,24 @@ jb_component('studio.angularPreviewIframe',{
 });
 
 function jb_ngStudioCrossdomainAjaxOptions(url,cookie) {
+	var projectInfo = jbart.studio.ngProjectInfo;
+
 	var options = { url: url };
-	if (!!location.host) {
+	if (!!location.host || projectInfo.useProxyToGetIFrame) {
 		options.url = '?op=httpCall&url='+encodeURIComponent(url);
 		if (cookie)
 			options.url += '&header_cookie='+encodeURIComponent(cookie);
+
+		if (projectInfo.useProxyToGetIFrame) options.url = 'http://localhost:8090/' + options.url;   // TODO: take 8090 from a parameter
 	}
 	if (options.url.indexOf('//')==0) options.url = 'http:'+options.url;
 
-	if (!location.host && cookie) {
-		options.beforeSend = function(xhr) {
-			xhr.setRequestHeader('Cookie', cookie);  // TODO: this does not work
-		}
-		options.xhrFields = { withCredentials: true };
-	}
+	// if (!location.host && cookie) {
+	// 	options.beforeSend = function(xhr) {
+	// 		xhr.setRequestHeader('Cookie', cookie);  // TODO: this does not work
+	// 	}
+	// 	options.xhrFields = { withCredentials: true };
+	// }
 	
 	return options;
 }
