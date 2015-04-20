@@ -7860,24 +7860,26 @@ jb_component('studio.angularPreviewIframe',{
 		var moduleBaseUrl = 'http://storage.googleapis.com/jbartlib/apps/angular-inspector/';
 		var moduleScript = '<script src="'+moduleBaseUrl+'ng-jbart-module.js"></script>'
 
-		$.ajax({
-			url: jb_studioCrossdomainUrl(projectInfo.previewUrl,projectInfo.cookie),
-			dataType: 'html'
-		}).then(function(htmlContent) {
+		$.ajax(jb_ngStudioCrossdomainAjaxOptions(projectInfo.previewUrl,projectInfo.cookie)).then(function(htmlContent) {
 			var baseStr  = '<base href="' + projectInfo.previewUrl + '"/>';
-			htmlContent = htmlContent.replace(/window\.location =/g,'debugger; window.location =');
+			htmlContent = htmlContent.replace(/window\.location =/g,'debugger; window.location1 =');
 			htmlContent = htmlContent.replace(/<head>/,'<head>'+baseStr);
 
 			var pushState = '<script>try { history.pushState({},"","'+projectInfo.previewUrl+'"); } catch(e) {}</script>';
 
 			htmlContent = htmlContent.replace(/<head>/,'<head>'+pushState);
 
+			if (! htmlContent.match(/script src="([^"]*angular.js)"/)) {
+				var doc = iframe[0].contentWindow.document;
+				doc.write(htmlContent);
+				doc.close();
+				return;				
+			}
+
 			var angular_srcUrl = htmlContent.match(/script src="([^"]*angular.js)"/)[1];
 			var absUrl = angular_srcUrl.match(/\/\//);
 			angular_srcUrl = absUrl ? angular_srcUrl : projectInfo.previewUrl.split('/').slice(0,-1).join('/') + '/' + angular_srcUrl;
-			$.ajax({
-				url: jb_studioCrossdomainUrl(angular_srcUrl)
-			}).then(function(angularJs) {
+			$.ajax(jb_ngStudioCrossdomainAjaxOptions(angular_srcUrl)).then(function(angularJs) {
 				var angularJsNoRemarks = jb_cleanJsRemarks(angularJs);
 
 				var doc = iframe[0].contentWindow.document;
@@ -7919,15 +7921,23 @@ jb_component('studio.angularPreviewIframe',{
 	}
 });
 
-function jb_studioCrossdomainUrl(url,cookie) {
+function jb_ngStudioCrossdomainAjaxOptions(url,cookie) {
+	var options = { url: url };
 	if (!!location.host) {
-		url = '?op=httpCall&url='+encodeURIComponent(url);
+		options.url = '?op=httpCall&url='+encodeURIComponent(url);
 		if (cookie)
-			url += '&header_cookie='+encodeURIComponent(cookie);
+			options.url += '&header_cookie='+encodeURIComponent(cookie);
 	}
-	if (url.indexOf('//')==0) url = 'http:'+url;
+	if (options.url.indexOf('//')==0) options.url = 'http:'+options.url;
+
+	if (!location.host && cookie) {
+		options.beforeSend = function(xhr) {
+			xhr.setRequestHeader('Cookie', cookie);  // TODO: this does not work
+		}
+		options.xhrFields = { withCredentials: true };
+	}
 	
-	return url;
+	return options;
 }
 
 
