@@ -12,6 +12,12 @@ for(var i=0;i<process.argv.length;i++) {
     project = arg.split(':')[1];
 }
 
+var file_type_handlers = {};
+(['js','gif','png','jpg','html','xml','css','xtml','txt','json','bmp','woff','jsx','prj']).forEach(function(ext) {
+  file_type_handlers[ext] = function(req, res,path) { serveFile(req,res,path); };
+})
+ 
+
 // Settings
 var settings = JSON.parse(fs.readFileSync(project,{encoding: 'utf8'}));
 // if (!settings.base_dir) {
@@ -151,6 +157,7 @@ function serve(req, res) {
     var url_parts = req.url.split('?');
     var path = url_parts[0].substring(1), query= url_parts[1];
     var op = getURLParam(req,'op');
+   var file_type = path.split('.').pop();
 
     if (op && op_get_handlers[op] && req.method == 'GET') {
       return op_get_handlers[op](req,res,path);
@@ -163,8 +170,11 @@ function serve(req, res) {
         log(user_machine,'post: ' + body,2); 
         return op_post_handlers[op](req, res,body,path);
       });
-    } else
+    } else if (file_type && file_type_handlers[file_type]) {
+      return file_type_handlers[file_type](req,res,path);
+    } else {
       res.end('<xml type="error" desc="no handler for the request" request="' + req.url + '"/>');
+    }
    } catch(e) {
       var st = e.stack || ''
       console.log('main loop exception: ' + st,1,'');
@@ -172,7 +182,6 @@ function serve(req, res) {
 }
 http.createServer(serve).listen(port); 
 console.log('angular-inspector server at port ' + port);
-
 
 // utils
 function getURLParam(req,name) {
@@ -216,7 +225,7 @@ function doHttpCall(options) {
   };
   if (urlObj.port) http_options.port = urlObj.port;
 
-  GLOBAL.fiddler = true;
+  GLOBAL.fiddler = false;
   if (GLOBAL.fiddler) {
     var port = http_options.port ? ':' + http_options.port : '';
     http_options.path = (urlObj.protocol == 'https:' ? 'https' : 'http') + '://' + http_options.host + port + http_options.path;
@@ -290,6 +299,47 @@ function doHttpCall(options) {
   }
 }
 
+function serveFile(req,res,path) {
+  var full_path = path;
+  var extension = path.split('.').pop();
+  var _path = full_path.replace(/[\\\/]/g,'/');
+
+  fs.readFile(_path, function (err, content) {
+    if (err) {
+      if (err.errno === 34)
+        res.statusCode = 404;
+      else
+        res.statusCode = 500;
+      return res.end(error(0,'','Can not read file ' + full_path + ' ' + err,''));
+    } else {
+      fs.stat(_path, function (err, stat) {
+        if (err) {
+          res.statusCode = 500;
+          return res.end(error(0,'','file status code 500 ' + full_path + ' ' + err,''));
+        } else {
+          var etag = stat.size + '-' + Date.parse(stat.mtime);
+          res.setHeader('Last-Modified', stat.mtime);
+
+          if (extension == 'css') res.setHeader('Content-Type', 'text/css');
+          if (extension == 'xml') res.setHeader('Content-Type', 'application/xml');
+          if (extension == 'js') res.setHeader('Content-Type', 'application/javascript');
+          if (extension == 'woff') res.setHeader('Content-Type', 'application/x-font-woff');
+
+          if (req.headers['if-none-match'] === etag) {
+            res.statusCode = 304;
+            res.end();
+          } else {
+            res.setHeader('Content-Length', content.length);
+            res.setHeader('ETag', etag);
+            res.statusCode = 200;
+            res.end(content);
+          }
+        }
+      })
+    }
+  });     
+}
+
 process.on('uncaughtException', function (err) {
-    console.log(err);
+    console.log('' + err);
 });

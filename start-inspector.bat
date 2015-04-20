@@ -1,1 +1,1 @@
-chrome-win32\\chrome.exe --disable-web-security --app=file:///%~dp0/ng-studio.html?project=%1 --allow-file-access --reduce-security-for-testing
+chrome-win32\\chrome.exe --disable-web-security --app=http://localhost:8090/ng-studio.html?project=%1 --allow-file-access --reduce-security-for-testing
