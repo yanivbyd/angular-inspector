@@ -7554,8 +7554,7 @@ jb_component("studio.angularToolbar", {
 jb_component('studio.openAngularTemplatePopup', {
 	type: 'action',
 	params: {
-		templateElem: {},
-		elem: {}
+		templateElem: {}
 	},
 	impl: {
 		$: 'openDialog',
@@ -7567,7 +7566,7 @@ jb_component('studio.openAngularTemplatePopup', {
 		content: {
 			$: 'editableText', parent: '{{$code}}', property: 'v',
 			style: { $: 'editableText.codemirror', resizer: true, mode: 'htmlmixed' },
-			features: { $onctrlenter: { $: 'ng-studio.updateTemplateElement', code: '{{$code.v}}', elem: '{{$elem}}', templateElem: '{{$templateElem}}' } }
+			features: { $onctrlenter: { $: 'ng-studio.updateTemplateElement', code: '{{$code.v}}', templateElem: '{{$templateElem}}' } }
 		}
 	}
 });
@@ -7724,10 +7723,10 @@ jb_component('ng-studio.updateTemplateElement',{
 	},
 	impl: function(context,elem,templateElem,code) {
 		var newTemplate = $(code)[0];
+		var templateID = jb_findTemplateIdOfTemplateElem(templateElem);
 		$(templateElem).replaceWith(newTemplate);
-
-		// now update $templateCache
-		window.jbNgAddToTemplateDB(templateID,templateRoot.outerHTML,true);
+		var html = window.jbNgTemplateDB[templateID].$elem.get().map(function(e) { return e.outerHTML;}).join('\n');
+		window.jbNgAddToTemplateDB(templateID,html,true);
 
 		jb_ngStudioRefreshPreview(context);
 	}
@@ -7862,11 +7861,11 @@ jb_component('studio.angularPreviewIframe',{
 
 		$.ajax(jb_ngStudioCrossdomainAjaxOptions(projectInfo.previewUrl,projectInfo.cookie)).then(function(htmlContent) {
 			var baseStr  = '<base href="' + projectInfo.previewUrl + '"/>';
-			htmlContent = htmlContent.replace(/window\.location =/g,'debugger; window.location1 =');
+//			htmlContent = htmlContent.replace(/window\.location =/g,'debugger; window.location1 =');
 			htmlContent = htmlContent.replace(/<head>/,'<head>'+baseStr);
 
-			var setDocCookie = (projectInfo.cookie || '').split(';').map(function(c) { return 'document.cookie="' + c.trim() +'";' }).join('');
-			var scriptToRunInitially = '<script>try { ' + setDocCookie + 'debugger; history.pushState({},"","'+projectInfo.previewUrl+'");\n ' + setDocCookie + '} catch(e) {}</script>';
+			var setDocCookie = (projectInfo.cookie || '').split(';').map(function(c) { return 'document.cookie="' + c.trim() +'";\n' }).join('');
+			var scriptToRunInitially = '<script>try { history.pushState({},"","'+projectInfo.previewUrl+'");\n ' + setDocCookie + '} catch(e) {}</script>';
 
 			htmlContent = htmlContent.replace(/<head>/,'<head>'+scriptToRunInitially);
 
@@ -7901,12 +7900,11 @@ jb_component('studio.angularPreviewIframe',{
 
 				iframe[0].contentWindow.onload = function() {
 					window._window = iframe[0].contentWindow;
+					window._doc = iframe[0].contentWindow.document;
 					window._angular = _window.angular;
 				}
 			})
 		},function() { });
-
-		// var iframe = $('<iframe frameborder="0" />').attr('charset','UTF-8').attr('src',projectInfo.previewUrl).appendTo($wrapper);
 
 		jbart.studio.previewWindow = iframe[0].contentWindow;
 
@@ -7988,7 +7986,8 @@ jb_component('studio-ng.openOutlinePopup', {
 			    ]
 			  },
 			  { $: 'studio-ng.autoSelectInOutlineTree', templateElem: '{{$templateElem}}' },
-			  { $deleteNode: { $: 'studio-ng.deleteTemplateElem', templateElem: '{{$templateElem}}' } },
+			  { $deleteNode: { $: 'studio-ng.deleteTemplateElem', templateElem: '{{$treeElem}}' } },
+			  { $treeDoubleClickNode: { $: 'studio.openAngularTemplatePopup', templateElem: '{{$treeElem}}' } },
 			  { $id: 'studio-tree' }
 			]
 		}
@@ -8210,6 +8209,14 @@ function jb_ngGetTemplateRoots(tElem) {
 	return $(tElem).parents().last().children().get();
 }
 
+function jb_findTemplateIdOfTemplateElem(tElem) {
+	var jbid = tElem.getAttribute('_jb');
+	if (!jbid) return;
+	for(var templateName in window.jbNgTemplateDB) {
+		var found = jbNgTemplateDB[templateName].$elem.findIncludeSelf("[_jb='"+jbid+"']")[0];
+		if (found) return templateName;
+	}
+}
 // generic tree
 
 jb_component('tree',{
