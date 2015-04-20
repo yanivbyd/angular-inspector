@@ -1,6 +1,6 @@
 {
   "name": "angular-inspector",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "repository": {
   	"type": "git",
   	"url": "git://github.com/yanivbyd/angular-inspector"
@@ -11,5 +11,11 @@
   "scripts": { 
   	"postinstall" : "npm install chromium-for-angular-inspector && node_modules\\chromium-for-angular-inspector\\chrome-win32.exe",
   	"start" : "start-inspector.bat example.prj"
+  },
+  "dependencies": {
+    "jquery-deferred": "0.3.0",
+    "query-string": "1.0.0",
+    "url": "0.10.3",
+    "zlib": "1.0.5"
   }
 }
