@@ -121,6 +121,23 @@ var op_get_handlers = {
   saveCodeSection: function(req,res,path) { 
     return op_post_handlers.saveCodeSection(req, res, getURLParam(req,'section'), path);
   },
+  angularjs: function(req,res,path) {
+        var urlObj = require('url').parse(req.url,true);
+        var urlParams = require('querystring').parse(urlObj.search);
+
+        doHttpCall({ url: urlParams.url, method: 'GET', headers: req.headers }).then(function(result) {
+          var str = result.content || result.toString();
+          res.write(str);
+          res.write('\n\n');
+          var addToNG = fs.readFileSync('./add-to-angular-end.js');
+          res.write(addToNG);
+
+          res.end();
+        },function(result) {
+          res.end(result.content || result.toString());
+        });
+
+  },
   httpCall: function(req,res,path) {
       try {
         var urlObj = require('url').parse(req.url,true);
@@ -269,14 +286,10 @@ function doHttpCall(options) {
 
       var output = { content: content, requestHeaders: http_options.headers, responseHeaders: result_stream.headers }; 
 
-      try {
-        if (options.success) options.success(output);
-      } catch(e) {}
       deferred.resolve(output);  
     });
 
    unziped_stream.on('error', function(err) {
-      if (options.error) options.error(err);
       deferred.reject(err);
     });    
   });

@@ -1,0 +1,24 @@
+{
+  "name": "angular inspector yaniv",
+  "short_name": "angular inspector (yaniv)",
+  "description": "angular inspector (yaniv)",
+  "manifest_version": 2,
+  "version": "1.2.2",
+  "author": "Yaniv",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "*://*/*"
+  ],
+ "background": {
+  "scripts": ["ext-background.js"]
+ },
+  "content_scripts": [
+      {
+          "matches": [ "*://*/*" ],
+          "js":         ["ext-content.js"],
+          "run_at":     "document_start",
+          "all_frames": false
+      }
+   ]
+}
